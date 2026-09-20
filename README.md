@@ -1,5 +1,7 @@
 # Hidden-Prompt Scanner for Documents
 
+**Live app:** https://hidden-prompt-scanner-for-documents.onrender.com/
+
 Scan documents for hidden prompt-injection attacks — invisible instructions, white-on-white text, zero-size fonts, off-page content, metadata, and embedded annotations that try to manipulate LLMs.
 
 ## Features
