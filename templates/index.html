@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hidden-Prompt Scanner</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body {
+    min-height:100vh; color:#fff;
+    font-family:Segoe UI,system-ui,-apple-system,Arial,sans-serif;
+    background:#000;
+    overflow-x:hidden;
+  }
+  /* purple aurora glow like the reference */
+  .glow {
+    position:fixed; inset:0; pointer-events:none; z-index:0;
+    background:
+      radial-gradient(ellipse 90% 55% at 50% 108%, rgba(124,58,237,.85) 0%, rgba(76,29,149,.55) 32%, rgba(0,0,0,0) 70%),
+      radial-gradient(ellipse 60% 30% at 8% 70%, rgba(109,40,217,.35) 0%, rgba(0,0,0,0) 70%),
+      radial-gradient(ellipse 60% 30% at 92% 70%, rgba(59,130,246,.22) 0%, rgba(0,0,0,0) 70%),
+      #000;
+  }
+  .glow::after {
+    content:""; position:absolute; left:-10%; right:-10%; bottom:-12%; height:55%;
+    background:radial-gradient(ellipse 55% 80% at 50% 100%, rgba(139,92,246,.5) 0%, rgba(0,0,0,0) 70%);
+    filter:blur(10px);
+  }
+  main { position:relative; z-index:1; max-width:760px; margin:0 auto; padding:9vh 20px 60px; text-align:center; }
+  h1 { font-size:clamp(30px,5vw,52px); line-height:1.12; font-weight:800; letter-spacing:-.5px; }
+  .sub { color:#b9b3d9; margin-top:12px; font-size:14.5px; }
+
+  /* central pill bar */
+  .pill {
+    margin:30px auto 0; max-width:640px;
+    display:flex; align-items:center; gap:8px;
+    background:rgba(20,16,32,.92);
+    border:1.5px solid #7c3aed;
+    border-radius:18px;
+    padding:8px 8px 8px 20px;
+    box-shadow:0 0 0 1px rgba(124,58,237,.35), 0 12px 60px rgba(124,58,237,.35);
+    transition:.15s;
+  }
+  .pill.over { border-color:#a78bfa; box-shadow:0 0 0 2px rgba(167,139,250,.5), 0 12px 60px rgba(124,58,237,.55); }
+  .pill input[type=text] {
+    flex:1; background:transparent; border:0; outline:0; color:#fff;
+    font-size:17px; padding:12px 0; min-width:0;
+  }
+  .pill input::placeholder { color:#97909f; }
+  .iconbtn {
+    width:46px; height:46px; flex:0 0 46px; border-radius:12px; border:0; cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    background:transparent; color:#cfc9e8; font-size:20px;
+  }
+  .iconbtn:hover { background:rgba(124,58,237,.2); color:#fff; }
+  .scanbtn {
+    height:46px; padding:0 20px; border-radius:12px; border:0; cursor:pointer;
+    background:linear-gradient(135deg,#8b5cf6,#6d28d9); color:#fff;
+    font-size:22px; display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .scanbtn:hover { filter:brightness(1.15); }
+  .scanbtn:disabled { opacity:.5; cursor:default; }
+  #filechips { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:14px; }
+  .chip { font-size:12.5px; color:#e6e1ff; background:rgba(124,58,237,.18);
+          border:1px solid rgba(139,92,246,.6); border-radius:20px; padding:5px 12px; }
+  .chip button { background:none; border:0; color:#c4b5fd; cursor:pointer; margin-left:6px; }
+  .hint { margin-top:10px; font-size:12px; color:#8b86a8; }
+
+  /* results */
+  #summary { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:26px 0 12px; }
+  .count { font-size:13px; border:1px solid rgba(139,92,246,.4); background:rgba(20,16,32,.85);
+           border-radius:10px; padding:7px 14px; }
+  #results { text-align:left; }
+  .card { background:rgba(18,14,30,.94); border:1px solid rgba(139,92,246,.35);
+          border-radius:14px; padding:16px 18px; margin-bottom:12px; }
+  .badge { display:inline-block; padding:3px 12px; border-radius:20px; font-size:12px; font-weight:800; }
+  .HIGH { background:rgba(255,93,93,.14); color:#ff7b7b; border:1px solid #ff5d5d; }
+  .MEDIUM { background:rgba(255,176,32,.12); color:#ffb020; border:1px solid #ffb020; }
+  .LOW { background:rgba(77,163,255,.12); color:#7db9ff; border:1px solid #4da3ff; }
+  .CLEAN { background:rgba(61,220,132,.12); color:#3ddc84; border:1px solid #3ddc84; }
+  .finding { border-top:1px solid rgba(139,92,246,.22); padding:10px 2px; font-size:13px; color:#ddd6f5; }
+  .finding code { color:#a78bfa; font-size:12px; }
+  .excerpt { background:#0a0714; border:1px solid rgba(139,92,246,.3); border-radius:8px;
+             padding:8px 10px; margin-top:6px; white-space:pre-wrap; word-break:break-word;
+             font-size:12.5px; color:#cfc9e8; }
+  .brand { margin-top:44px; color:#e9e6ff; font-size:15px; display:flex; gap:8px;
+           align-items:center; justify-content:center; opacity:.9; }
+  .brand .logo { width:22px; height:22px; border-radius:50%; background:#fff; color:#000;
+                 display:inline-flex; align-items:center; justify-content:center; font-weight:900; }
+  .spin { animation:spin 1s linear infinite; display:inline-block; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="glow"></div>
+<main>
+  <h1>Find hidden prompts<br>in documents</h1>
+  <p class="sub">Paste suspicious text or drop a file — detects invisible instructions, white text, zero-width chars &amp; prompt-injections. 100% local.</p>
+
+  <div class="pill" id="pill" title="Type text or drop files here">
+    <input type="text" id="q" placeholder="Paste text or drop a file to scan…" autocomplete="off">
+    <button class="iconbtn" id="attachBtn" title="Attach files">📎</button>
+    <button class="scanbtn" id="goBtn" title="Scan">✦</button>
+    <input type="file" id="files" multiple hidden accept=".pdf,.docx,.txt,.md,.markdown,.html,.htm">
+  </div>
+  <div id="filechips"></div>
+  <div class="hint" id="hint">Supported: .pdf, .docx, .txt, .md, .html &nbsp;•&nbsp; you can also drag &amp; drop files anywhere</div>
+
+  <div id="summary"></div>
+  <div id="results"></div>
+
+  <div class="brand"><span class="logo">u</span> hidden-prompt scanner</div>
+</main>
+
+<script>
+const pill = document.getElementById('pill');
+const q = document.getElementById('q');
+const input = document.getElementById('files');
+const goBtn = document.getElementById('goBtn');
+const chips = document.getElementById('filechips');
+let chosen = [];
+
+document.getElementById('attachBtn').onclick = e => { e.stopPropagation(); input.click(); };
+input.onchange = () => { addFiles(input.files); input.value=''; };
+function addFiles(list){ for (const f of list) chosen.push(f); renderChips(); }
+function renderChips(){
+  chips.innerHTML = [...chosen].map((f,i)=>`<span class="chip">${esc(f.name)}<button data-i="${i}">✕</button></span>`).join('');
+  chips.querySelectorAll('button').forEach(b => b.onclick = () => { chosen.splice(+b.dataset.i,1); renderChips(); });
+}
+['dragover','dragenter'].forEach(e => window.addEventListener(e, ev => { ev.preventDefault(); pill.classList.add('over'); }));
+['dragleave','drop'].forEach(e => window.addEventListener(e, ev => { ev.preventDefault(); pill.classList.remove('over'); }));
+window.addEventListener('drop', ev => { if (ev.dataTransfer.files.length) addFiles(ev.dataTransfer.files); });
+pill.addEventListener('dragover', ev => ev.stopPropagation());
+
+function esc(s){ return (s??'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// Safe fetch reader: if this page was opened via VS Code Live Server (:5500)
+// or the backend is down, the reply is HTML/empty — show a helpful message
+// instead of "Unexpected end of JSON input".
+async function apiJson(res){
+  const ct = res.headers.get('content-type') || '';
+  if (!ct.includes('application/json')) {
+    const txt = (await res.text()).slice(0, 150);
+    throw new Error(`Server returned ${res.status} with a non-JSON reply. Open http://127.0.0.1:5000 (Flask), not Live Server. Got: ${txt}`);
+  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `Server error ${res.status}`);
+  if (data.error) throw new Error(data.error);
+  return data;
+}
+function card(r){
+  const fs = r.findings.map(f=>`<div class="finding"><b>[${esc((f.severity||'').toUpperCase())}]</b> ${esc(f.type)} @ <code>${esc(f.location)}</code><br>${esc(f.detail||'')}${f.excerpt?`<div class="excerpt">${esc(f.excerpt)}</div>`:''}</div>`).join('')
+    || '<div class="finding">No hidden prompts detected. ✅</div>';
+  return `<div class="card"><span class="badge ${r.risk}">[${r.risk}]</span> <b>${esc(r.file)}</b>
+    <small style="color:#a79fc9"> score=${r.score} • ${r.finding_count} finding(s)</small>${fs}</div>`;
+}
+
+goBtn.onclick = async () => {
+  const text = q.value.trim();
+  if (chosen.length) return scanFiles();
+  if (text) return scanText(text);
+  // no input: just browse files
+  input.click();
+};
+q.addEventListener('keydown', e => { if (e.key === 'Enter') goBtn.click(); });
+
+async function scanFiles(){
+  goBtn.innerHTML = '<span class="spin">✦</span>'; goBtn.disabled = true;
+  const fd = new FormData();
+  chosen.forEach(f => fd.append('files', f));
+  try {
+    const data = await apiJson(await fetch('/api/scan', {method:'POST', body:fd}));
+    document.getElementById('summary').innerHTML =
+      `<span class="count">Scanned ${data.files_scanned}</span>` +
+      ['HIGH','MEDIUM','LOW','CLEAN'].map(k=>`<span class="count"><b>${data.summary[k]||0}</b> ${k}</span>`).join('');
+    document.getElementById('results').innerHTML = data.results.map(card).join('');
+  } catch(e){ alert('Scan failed: '+e.message); }
+  goBtn.innerHTML = '✦'; goBtn.disabled = false;
+}
+
+async function scanText(t){
+  goBtn.innerHTML = '<span class="spin">✦</span>'; goBtn.disabled = true;
+  try {
+    const r = await apiJson(await fetch('/api/text', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({text:t})}));
+    document.getElementById('summary').innerHTML = '';
+    document.getElementById('results').innerHTML = card(r);
+  } catch(e){ alert('Scan failed: '+e.message); }
+  goBtn.innerHTML = '✦'; goBtn.disabled = false;
+}
+</script>
+</body>
+</html>

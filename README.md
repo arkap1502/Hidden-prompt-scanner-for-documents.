@@ -94,12 +94,27 @@ Example output:
 
 ```text
 hidden-prompt-scanner/
-├── scanner.py        # main CLI entry point
+├── app.py            # local web UI (Flask, http://127.0.0.1:5000)
+├── templates/
+│   └── index.html    # dark + purple-glow frontend
+├── scanner.py        # CLI entry point
 ├── detectors.py      # hidden-text detection logic
 ├── patterns.py       # injection regex patterns
+├── samples/          # poisoned + clean test files
 ├── requirements.txt
+├── LICENSE           # MIT
 └── README.md
 ```
+
+## Web UI (recommended)
+
+```bash
+python app.py
+```
+
+Then open **http://127.0.0.1:5000** — drag & drop files or paste text.
+IMPORTANT: open the Flask URL above, NOT via VS Code Live Server —
+Live Server has no backend, so scans will fail.
 
 ## Limitations
 
