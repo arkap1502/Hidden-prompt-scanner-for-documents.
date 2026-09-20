@@ -4,3 +4,4 @@ pymupdf>=1.23      # best PDF backend: colors, font sizes, positions, annotation
 pypdf>=4           # fallback PDF backend (also covers PyPDF2)
 python-docx>=1.1   # optional, extra DOCX styling checks
 flask>=3          # local web UI (app.py)
+gunicorn>=22      # production server used by Render (Linux host)
